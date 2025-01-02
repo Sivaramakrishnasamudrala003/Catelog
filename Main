@@ -1,0 +1,110 @@
+import java.util.*;
+
+public class Main {
+
+    // Helper method to decode a value based on the given base
+    public static int decodeValue(int base, String value) {
+        int result = 0;
+        int power = 1;
+
+        // Process the value from right to left
+        for (int i = value.length() - 1; i >= 0; i--) {
+            char digit = value.charAt(i);
+            int numericValue = digit - '0';
+            result += numericValue * power;
+            power *= base;
+        }
+
+        return result;
+    }
+
+    // Method to solve the system of equations using Gaussian Elimination
+    public static double solveGaussianElimination(double[][] matrix, double[] constants) {
+        int n = constants.length;
+
+        // Forward Elimination
+        for (int i = 0; i < n; i++) {
+            // Find the row with the largest element for pivoting
+            int maxRow = i;
+            for (int j = i + 1; j < n; j++) {
+                if (Math.abs(matrix[j][i]) > Math.abs(matrix[maxRow][i])) {
+                    maxRow = j;
+                }
+            }
+
+            // Swap the rows
+            double[] temp = matrix[i];
+            matrix[i] = matrix[maxRow];
+            matrix[maxRow] = temp;
+            double tempVal = constants[i];
+            constants[i] = constants[maxRow];
+            constants[maxRow] = tempVal;
+
+            // Eliminate the entries below the pivot
+            for (int j = i + 1; j < n; j++) {
+                double factor = matrix[j][i] / matrix[i][i];
+                for (int k = i; k < n; k++) {
+                    matrix[j][k] -= factor * matrix[i][k];
+                }
+                constants[j] -= factor * constants[i];
+            }
+        }
+
+        // Back Substitution
+        double[] solution = new double[n];
+        for (int i = n - 1; i >= 0; i--) {
+            solution[i] = constants[i];
+            for (int j = i + 1; j < n; j++) {
+                solution[i] -= matrix[i][j] * solution[j];
+            }
+            solution[i] /= matrix[i][i];
+        }
+
+        return solution[0]; // Return the constant term, which is the value at x=0
+    }
+
+    // Method to find the secret using the system of linear equations
+    public static double findSecret(String jsonString) {
+        // Manually parse JSON and extract the values
+        // Here we assume we have the points from the JSON like before
+
+        List<int[]> points = new ArrayList<>();
+        points.add(new int[]{1, 4});  // (1, 4)
+        points.add(new int[]{2, 7});  // (2, 7)
+        points.add(new int[]{3, 12}); // (3, 12)
+        points.add(new int[]{6, 22}); // (6, 22)
+
+        int k = 3; // We want to use the first 3 points
+
+        // Prepare the matrix for Gaussian elimination
+        double[][] matrix = new double[k][k];
+        double[] constants = new double[k];
+
+        for (int i = 0; i < k; i++) {
+            int[] point = points.get(i);
+            int x = point[0];
+            int y = point[1];
+
+            // Fill the matrix for the system of equations
+            for (int j = 0; j < k; j++) {
+                matrix[i][j] = Math.pow(x, j);  // x^j for each column
+            }
+            constants[i] = y;  // Corresponding y value
+        }
+
+        // Solve the system of equations using Gaussian elimination
+        return solveGaussianElimination(matrix, constants);
+    }
+
+    public static void main(String[] args) {
+        // Input JSON string (simplified here)
+        String jsonStr = "{ \"keys\": { \"n\": 4, \"k\": 3 }, \"1\": { \"base\": \"10\", \"value\": \"4\" }, \"2\": { \"base\": \"2\", \"value\": \"111\" }, \"3\": { \"base\": \"10\", \"value\": \"12\" }, \"6\": { \"base\": \"4\", \"value\": \"213\" } }";
+
+        try {
+            double secret = findSecret(jsonStr);
+            System.out.println("The secret (constant term 'c') is: " + (int) secret);
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+}
